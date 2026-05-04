@@ -1747,9 +1747,16 @@
                     clonedDoc.head.appendChild(fixStyle);
                 }
             }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
+                // 改用 JPEG 格式並設定壓縮品質為 0.8，大幅縮減檔案大小同時維持高解析度畫質
+                const imgData = canvas.toDataURL('image/jpeg', 0.8);
                 
-                const pdf = new jsPDF('p', 'mm', 'a4');
+                // 建立 PDF 時啟用內建結構壓縮 (compress: true)
+                const pdf = new jsPDF({
+                    orientation: 'p', 
+                    unit: 'mm', 
+                    format: 'a4',
+                    compress: true
+                });
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = pdf.internal.pageSize.getHeight();
                 
@@ -1761,13 +1768,14 @@
                 let heightLeft = scaledHeight;
                 let position = 0;
                 
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, scaledHeight);
+                // 寫入圖片時指定 JPEG 格式，並使用 'FAST' 演算法進一步優化 PDF 體積
+                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, scaledHeight, undefined, 'FAST');
                 heightLeft -= pdfHeight;
                 
                 while (heightLeft > 0) {
                     position = heightLeft - scaledHeight;
                     pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, scaledHeight);
+                    pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, scaledHeight, undefined, 'FAST');
                     heightLeft -= pdfHeight;
                 }
                 
